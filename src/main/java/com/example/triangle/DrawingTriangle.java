@@ -5,17 +5,17 @@ import javafx.scene.canvas.GraphicsContext;
 import java.util.Arrays;
 import java.util.List;
 
-public class DrawingTriangle {
-    private ColorPoint firstPoint;
-    private ColorPoint secondPoint;
-    private ColorPoint thirdPoint;
+public class DrawingTriangle extends AbstractTriangleDrawer {
+
     public DrawingTriangle(ColorPoint firstPoint, ColorPoint secondPoint, ColorPoint thirdPoint) {
-        this.firstPoint = firstPoint;
-        this.secondPoint = secondPoint;
-        this.thirdPoint = thirdPoint;
+        super(firstPoint, secondPoint, thirdPoint);
     }
-    public void drawTriangle(GraphicsContext graphicsContext) {
-        sortVertex();
+    @Override
+    public void actualDraw(GraphicsContext graphicsContext, List<ColorPoint> points) {
+        //sortVertex();
+        ColorPoint firstPoint = points.get(0);
+        ColorPoint secondPoint = points.get(1);
+        ColorPoint thirdPoint = points.get(2);
 
         double xAxisIncrement12 = getXAxisIncrement(firstPoint, secondPoint);
         double xAxisIncrement13 = getXAxisIncrement(firstPoint, thirdPoint);
@@ -37,7 +37,7 @@ public class DrawingTriangle {
         }
 
         drawPartTriangle(graphicsContext, firstPoint.getY(), secondPoint.getY() - 1, leftBoard, rightBoard,
-                firstLeftIncrement, firstRightIncrement);
+                firstLeftIncrement, firstRightIncrement, firstPoint, secondPoint, thirdPoint);
 
         if (firstPoint.getY() == secondPoint.getY()) {
             leftBoard = firstPoint.getX();
@@ -51,9 +51,9 @@ public class DrawingTriangle {
         }
 
         drawPartTriangle(graphicsContext, secondPoint.getY(), thirdPoint.getY(), leftBoard, rightBoard,
-                secondLeftIncrement, secondRightIncrement);
+                secondLeftIncrement, secondRightIncrement, firstPoint, secondPoint, thirdPoint);
     }
-
+/*
     private void sortVertex() {
         List<ColorPoint> points = Arrays.asList(firstPoint, secondPoint, thirdPoint);
         points.sort((a, b) -> {
@@ -67,14 +67,15 @@ public class DrawingTriangle {
         firstPoint = points.get(0);
         secondPoint = points.get(1);
         thirdPoint = points.get(2);
-    }
+    }*/
 
     private void drawPartTriangle(GraphicsContext graphicsContext, int startY, int endY, double leftBoard,
-                                  double rightBoard, double leftIncrement, double rightIncrement) {
+                                  double rightBoard, double leftIncrement, double rightIncrement,
+                                  ColorPoint firstPoint, ColorPoint secondPoint, ColorPoint thirdPoint) {
         for (int i = startY; i <= endY; i++) {
 
             for (int j = (int) leftBoard; j <= (int) rightBoard; j++) {
-                graphicsContext.getPixelWriter().setColor(j, i, getInterpolationColor(j, i));
+                graphicsContext.getPixelWriter().setColor(j, i, getInterpolationColor(j, i, firstPoint, secondPoint, thirdPoint));
             }
 
             leftBoard += leftIncrement;
@@ -92,7 +93,8 @@ public class DrawingTriangle {
         }
     }
 
-    private javafx.scene.paint.Color getInterpolationColor(int currentX, int currentY) {
+    private javafx.scene.paint.Color getInterpolationColor(int currentX, int currentY, ColorPoint firstPoint,
+                                                           ColorPoint secondPoint, ColorPoint thirdPoint) {
         double alpha, beta;
 
         double numerator = firstPoint.getX() * (currentY - thirdPoint.getY()) +
@@ -133,6 +135,5 @@ public class DrawingTriangle {
         }
 
         return Math.max(color, 0);
-
     }
 }

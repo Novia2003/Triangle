@@ -74,7 +74,7 @@ public class HelloController implements Initializable {
 
     protected void paint(GraphicsContext graphicsContext) {
         graphicsContext.clearRect(0, 0, WIDTH, HEIGHT);
-        DrawingTriangle triangle = new DrawingTriangle(firstPoint, secondPoint, thirdPoint);
+        ITriangleDrawer triangle = new DrawingTriangle2(firstPoint, secondPoint, thirdPoint);
         triangle.drawTriangle(graphicsContext);
     }
 }
