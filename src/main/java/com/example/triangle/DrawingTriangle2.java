@@ -2,9 +2,8 @@ package com.example.triangle;
 
 import javafx.scene.canvas.GraphicsContext;
 
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public class DrawingTriangle2 extends AbstractTriangleDrawer {
     public DrawingTriangle2(ColorPoint firstPoint, ColorPoint secondPoint, ColorPoint thirdPoint) {
@@ -20,28 +19,41 @@ public class DrawingTriangle2 extends AbstractTriangleDrawer {
         double xAxisIncrement12 = getXAxisIncrement(firstPoint, secondPoint);
         double xAxisIncrement13 = getXAxisIncrement(firstPoint, thirdPoint);
 
-        Map<Integer, Integer> firstLeftBoard, firstRightBoard, secondLeftBoard, secondRightBoard;
+        int[] firstLeftBoard, firstRightBoard, secondLeftBoard, secondRightBoard;
 
         if (firstPoint.getY() != secondPoint.getY()) {
+            ColorPoint auxiliaryPoint = getAuxiliaryPoint(firstPoint, secondPoint, thirdPoint);
+
             if (xAxisIncrement13 > xAxisIncrement12) {
                 firstLeftBoard = drawBresenhamLine(firstPoint, secondPoint, true);
-                firstRightBoard = secondRightBoard = drawBresenhamLine(firstPoint, thirdPoint, false);
+                firstRightBoard = drawBresenhamLine(firstPoint, auxiliaryPoint, false);
+                secondRightBoard = drawBresenhamLine(auxiliaryPoint, thirdPoint, false);
                 secondLeftBoard = drawBresenhamLine(secondPoint, thirdPoint, true);
             } else {
-                firstLeftBoard = secondLeftBoard = drawBresenhamLine(firstPoint, thirdPoint, true);
+                firstLeftBoard = drawBresenhamLine(firstPoint, auxiliaryPoint, true);
+                secondLeftBoard = drawBresenhamLine(auxiliaryPoint, thirdPoint, true);
                 firstRightBoard = drawBresenhamLine(firstPoint, secondPoint, false);
                 secondRightBoard = drawBresenhamLine(secondPoint, thirdPoint, false);
             }
 
-            drawPartTriangle(graphicsContext, firstPoint.getY(), secondPoint.getY() - 1, firstLeftBoard, firstRightBoard,
+            drawPartTriangle(graphicsContext, firstPoint.getY(), firstLeftBoard, firstRightBoard,
                     firstPoint, secondPoint, thirdPoint);
         } else {
             secondLeftBoard = drawBresenhamLine(firstPoint, thirdPoint, true);
             secondRightBoard = drawBresenhamLine(secondPoint, thirdPoint, false);
         }
 
-        drawPartTriangle(graphicsContext, secondPoint.getY(), thirdPoint.getY(), secondLeftBoard, secondRightBoard,
+        drawPartTriangle(graphicsContext, secondPoint.getY(), secondLeftBoard, secondRightBoard,
                 firstPoint, secondPoint, thirdPoint);
+    }
+
+    private ColorPoint getAuxiliaryPoint(ColorPoint firstPoint, ColorPoint secondPoint, ColorPoint thirdPoint) {
+        int dy12 = secondPoint.getY() - firstPoint.getY();
+        int dy13 = thirdPoint.getY() - firstPoint.getY();
+        int dx13 = thirdPoint.getX() - firstPoint.getX();
+        int x = dy12 * dx13 / dy13 + firstPoint.getX();
+
+        return new ColorPoint(x, secondPoint.getY(), null);
     }
 
     private double getXAxisIncrement(ColorPoint firstPont, ColorPoint secondPoint) {
@@ -54,13 +66,15 @@ public class DrawingTriangle2 extends AbstractTriangleDrawer {
         }
     }
 
-    private Map<Integer, Integer> drawBresenhamLine(ColorPoint firstPoint,
-                                                    ColorPoint secondPoint, boolean isLeftBoard) {
-        HashMap<Integer, Integer> map = new HashMap<>();
+    private int[] drawBresenhamLine(ColorPoint firstPoint, ColorPoint secondPoint, boolean isLeftBoard) {
         int x, y, deltaX, deltaY, additionX, additionY, incrementX, incrementY, error, errorIncrease, errorDecrease;
+        int initialHeight = firstPoint.getY();
 
         deltaX = secondPoint.getX() - firstPoint.getX();
-        deltaY = secondPoint.getY() - firstPoint.getY();
+        deltaY = secondPoint.getY() - initialHeight;
+
+        int[] array = new int[deltaY + 1];
+        Arrays.fill(array, -1);
 
         incrementX = Integer.compare(deltaX, 0);
         incrementY = Integer.compare(deltaY, 0);
@@ -82,8 +96,8 @@ public class DrawingTriangle2 extends AbstractTriangleDrawer {
 
         error = errorIncrease / 2;
         x = firstPoint.getX();
-        y = firstPoint.getY();
-        map.put(y, x);
+        y = initialHeight;
+        array[0] = x;
 
         for (int i = 0; i < errorIncrease; i++) {
             error -= errorDecrease;
@@ -97,27 +111,29 @@ public class DrawingTriangle2 extends AbstractTriangleDrawer {
                 y += additionY;
             }
 
-            if (map.containsKey(y)) {
-                if (map.get(y) > x && isLeftBoard) { // для левой
-                    map.put(y, x);
+            int index = y - initialHeight;
+
+            if (array[index] != -1) {
+                if (array[index] > x && isLeftBoard) { // для левой
+                    array[index] = x;
                 }
             } else {
-                map.put(y, x);
+                array[index] = x;
             }
         }
 
-        return map;
+        return array;
     }
 
-    private void drawPartTriangle(GraphicsContext graphicsContext, int startY, int endY,
-                                  Map<Integer, Integer> leftMap, Map<Integer, Integer> rightMap,
+    private void drawPartTriangle(GraphicsContext graphicsContext, int startY, int[] leftArray, int[] rightArray,
                                   ColorPoint firstPoint, ColorPoint secondPoint, ColorPoint thirdPoint) {
-        for (int i = startY; i <= endY; i++) {
-            int leftBoard = leftMap.get(i);
-            int rightBoard = rightMap.get(i);
+        for (int i = 0; i < leftArray.length; i++) {
+            int leftBoard = leftArray[i];
+            int rightBoard = rightArray[i];
+            int y = i + startY;
 
-            for (int j = leftBoard; j <= rightBoard; j++) {
-                graphicsContext.getPixelWriter().setColor(j, i, getInterpolationColor(j, i, firstPoint, secondPoint, thirdPoint));
+            for (int x = leftBoard; x <= rightBoard; x++) {
+                graphicsContext.getPixelWriter().setColor(x, y, getInterpolationColor(x, y, firstPoint, secondPoint, thirdPoint));
             }
         }
     }
@@ -240,7 +256,7 @@ public class DrawingTriangle2 extends AbstractTriangleDrawer {
             errorDecreaseRight = Math.abs(firstRightDeltaX);
         }
 
-        System.out.println(firstRightDeltaXBigger + " хуйло ебаное");
+
 
         errorRight = errorAdditionRight / 2;
         int firstRightIncrement = Integer.compare(firstRightDeltaX, 0);
